@@ -126,7 +126,7 @@ class BasePredictor:
         # NOTE: assuming im with (b, 3, h, w) if it's a tensor
         img = im.to(self.device)
         img = img.half() if self.model.fp16 else img.float()  # uint8 to fp16/32
-        img /= 255  # 0 - 255 to 0.0 - 1.0
+        #img /= 255  # 0 - 255 to 0.0 - 1.0
         return img
 
     def pre_transform(self, im):
@@ -209,8 +209,8 @@ class BasePredictor:
     @smart_inference_mode()
     def stream_inference(self, source=None, model=None):
         """Streams real-time inference on camera feed and saves results to file."""
-        if self.args.verbose:
-            LOGGER.info('')
+        #if self.args.verbose:
+        #    LOGGER.info('')
 
         # Setup model
         if not self.model:
@@ -242,39 +242,41 @@ class BasePredictor:
             # Inference
             with profilers[1]:
                 preds = self.model(im, augment=self.args.augment, visualize=visualize)
+            ms_feats = preds[-1]
+            return ms_feats
 
-            # Postprocess
-            with profilers[2]:
-                self.results = self.postprocess(preds, im, im0s)
-            self.run_callbacks('on_predict_postprocess_end')
+            ## Postprocess
+            #with profilers[2]:
+            #    self.results = self.postprocess(preds, im, im0s)
+            #self.run_callbacks('on_predict_postprocess_end')
 
-            # Visualize, save, write results
-            n = len(im0s)
-            for i in range(n):
-                self.results[i].speed = {
-                    'preprocess': profilers[0].dt * 1E3 / n,
-                    'inference': profilers[1].dt * 1E3 / n,
-                    'postprocess': profilers[2].dt * 1E3 / n}
-                if self.source_type.tensor:  # skip write, show and plot operations if input is raw tensor
-                    continue
-                p, im0 = path[i], im0s[i].copy()
-                p = Path(p)
+            ## Visualize, save, write results
+            #n = len(im0s)
+            #for i in range(n):
+            #    self.results[i].speed = {
+            #        'preprocess': profilers[0].dt * 1E3 / n,
+            #        'inference': profilers[1].dt * 1E3 / n,
+            #        'postprocess': profilers[2].dt * 1E3 / n}
+            #    if self.source_type.tensor:  # skip write, show and plot operations if input is raw tensor
+            #        continue
+            #    p, im0 = path[i], im0s[i].copy()
+            #    p = Path(p)
 
-                if self.args.verbose or self.args.save or self.args.save_txt or self.args.show:
-                    s += self.write_results(i, self.results, (p, im, im0))
-                if self.args.save or self.args.save_txt:
-                    self.results[i].save_dir = self.save_dir.__str__()
-                if self.args.show and self.plotted_img is not None:
-                    self.show(p)
-                if self.args.save and self.plotted_img is not None:
-                    self.save_preds(vid_cap, i, str(self.save_dir / p.name))
+            #    if self.args.verbose or self.args.save or self.args.save_txt or self.args.show:
+            #        s += self.write_results(i, self.results, (p, im, im0))
+            #    if self.args.save or self.args.save_txt:
+            #        self.results[i].save_dir = self.save_dir.__str__()
+            #    if self.args.show and self.plotted_img is not None:
+            #        self.show(p)
+            #    if self.args.save and self.plotted_img is not None:
+            #        self.save_preds(vid_cap, i, str(self.save_dir / p.name))
 
-            self.run_callbacks('on_predict_batch_end')
-            yield from self.results
+            #self.run_callbacks('on_predict_batch_end')
+            #yield from self.results
 
-            # Print time (inference-only)
-            if self.args.verbose:
-                LOGGER.info(f'{s}{profilers[1].dt * 1E3:.1f}ms')
+            ## Print time (inference-only)
+            #if self.args.verbose:
+            #    LOGGER.info(f'{s}{profilers[1].dt * 1E3:.1f}ms')
 
         # Release assets
         if isinstance(self.vid_writer[-1], cv2.VideoWriter):
